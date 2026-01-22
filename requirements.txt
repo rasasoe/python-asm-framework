@@ -1,0 +1,7 @@
+python-nmap
+requests
+PyYAML
+vulners
+beautifulsoup4
+selenium
+webdriver-manager
