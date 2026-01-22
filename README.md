@@ -197,7 +197,106 @@ collection:
 
 ---
 
-## 1. 요구 사항 (Requirements)
+## 📊 API 연동 여부에 따른 수집 범위
+
+### ❌ API 없는 경우 (현재 상태)
+
+**수집 데이터:**
+```
+✅ 포트/서비스/버전 (nmap)
+✅ 보안 헤더 누락 (HTTP 프로빙)
+✅ API 구조 (Swagger 조회)
+✅ UI 요소 (Selenium 관찰)
+❌ CVE 정보 (API 필요)
+```
+
+**리스크 점수 예시:**
+```
+Port 80 (nginx 1.18.0):
+├─ Exposure: 15/35  (nmap으로 파악)
+├─ Config: 4/20     (HTTP 헤더로 파악)
+├─ Knowledge: 0/35  ← CVE 없음
+└─ Functional: 0/20
+   = 19/100 (Low)
+```
+
+### ✅ API 있는 경우 (Vulners + NVD)
+
+**추가 수집 데이터:**
+```
+✅ CVE 목록 (Vulners API)
+✅ CVE 상세정보 (NVD API)
+✅ CVSS 점수
+✅ 패치/해결책 정보
+```
+
+**리스크 점수 예시 (동일 환경):**
+```
+Port 80 (nginx 1.18.0):
+├─ Exposure: 15/35
+├─ Config: 4/20
+├─ Knowledge: 35/35  ← CVE-2021-23017 (CVSS 7.5)
+└─ Functional: 0/20
+   = 54/100 (High) ← "Low"→"High"로 변경!
+```
+
+---
+
+## 📈 정보 소스별 상세 분석
+
+| 정보 | 수집 방법 | API 필요? | 침략도 | 상세 |
+|------|---------|---------|------|------|
+| 포트/서비스/버전 | nmap 스캔 | ❌ | 매우 낮음 | SYN 포트 스캔만 수행 |
+| 보안 헤더 | HTTP GET | ❌ | 없음 | 헤더 정보 읽기만 |
+| API 구조 | Swagger 파싱 | ❌ | 없음 | 공개 문서 조회 |
+| UI 요소 | Selenium 관찰 | ❌ | 없음 | 화면 캡처, 클릭/입력 없음 |
+| **CVE 매칭** | **Vulners** | **✅** | **없음** | **공개 DB 검색** |
+| **CVE 상세정보** | **NVD** | **✅** | **없음** | **공식 DB 조회** |
+
+---
+
+## 🔍 각 수집 단계별 흐름
+
+### 1단계: 기술적 공격 표면 (침략 없음)
+```bash
+nmap -Pn -p- -sV --version-light {target_ip}
+↓
+포트 80: nginx 1.18.0
+포트 8080: http-proxy
+```
+
+### 2단계: HTTP 설정 분석 (조회만)
+```bash
+GET http://{target}:{port}/
+↓
+Server: nginx/1.18.0
+Missing Headers: CSP, HSTS, X-Frame-Options (5개)
+```
+
+### 3단계: API 구조 파악 (문서 읽기)
+```bash
+GET http://{target}/api-docs/swagger.yaml
+↓
+Endpoints: GET /api/users, POST /api/data (인증 없음)
+```
+
+### 4단계: CVE 매칭 (선택, API 필수)
+```bash
+Vulners API: query="nginx 1.18.0" limit=8
+↓
+CVE-2021-23017 (CVSS 7.5, High)
+CVE-2019-9511 (CVSS 7.5, High)
+...
+```
+
+### 5단계: NVD 상세정보 (선택, API 필수)
+```bash
+NVD API: cveId="CVE-2021-23017"
+↓
+설명, 영향범위, 패치정보, 참조링크
+```
+
+---## 1. 요구 사항 (Requirements)
 
 * Python 3.10 이상
 * Nmap 설치 및 PATH 환경변수 등록 필수
