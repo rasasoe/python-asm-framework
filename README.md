@@ -130,6 +130,77 @@ python-asm-framework/
 
 * Python 3.10 이상
 * Nmap 설치 및 PATH 환경변수 등록 필수
+  - **Windows**: Nmap 공식 설치 프로그램으로 설치 (PATH 자동 등록)
+  - **WSL**: `sudo apt-get install nmap` 실행
+  - **Linux/Mac**: 패키지 관리자로 설치 (`brew install nmap` 등)
+* (선택) Selenium 관찰 기능을 위한 Google Chrome 브라우저
+
+### 2. 의존성 설치
+
+```bash
+pip install -r requirements.txt
+
+```
+
+---
+
+## 🚨 트러블슈팅 (Troubleshooting)
+
+### ❌ `nmap program was not found in path`
+
+**원인**: nmap이 설치되지 않았거나 PATH에 등록되지 않음
+
+**해결:**
+```bash
+# Windows (WSL 환경)
+sudo apt-get install nmap
+
+# Windows (native)
+# → https://nmap.org/download.html 에서 .exe 설치 후 PATH 등록
+
+# macOS
+brew install nmap
+
+# Linux
+sudo apt-get install nmap
+```
+
+**확인:**
+```bash
+nmap --version
+```
+
+---
+
+### ❌ `Chrome instance exited` (Selenium 오류)
+
+**원인**: Chrome이 설치되지 않았거나 headless 모드 미지원
+
+**해결:**
+```yaml
+# config.yaml에서:
+collection:
+  run_selenium: false  # Chrome이 없으면 false로 설정
+```
+
+또는 Chrome 설치 후 `run_selenium: true`로 변경
+
+---
+
+### ❌ `DeprecationWarning: datetime.utcnow()` 경고
+
+**원인**: 구 Python datetime API 사용
+
+**영향**: 기능 동작에 문제 없음 (경고만 표시)
+
+**해결**: Python 3.12+ 사용 시 자동 해결됨
+
+---
+
+## 1. 요구 사항 (Requirements)
+
+* Python 3.10 이상
+* Nmap 설치 및 PATH 환경변수 등록 필수
 * (선택) Selenium 관찰 기능을 위한 Google Chrome 브라우저
 
 ### 2. 의존성 설치

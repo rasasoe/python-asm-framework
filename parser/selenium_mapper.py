@@ -18,7 +18,7 @@ def collect_ui_functions_observe_only(url: str, headless: bool = True, max_butto
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1280,900")
 
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+    driver = webdriver.Chrome(options=options, service=None)
     try:
         driver.get(url)
 

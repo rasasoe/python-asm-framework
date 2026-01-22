@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 def esc(s: str) -> str:
     return (s or "").replace("|", "\\|")
@@ -44,7 +44,7 @@ def cve_table(cves: List[Dict[str, Any]], limit: int = 30) -> str:
     return "\n".join(lines)
 
 def generate_report_md(asset: Dict[str, Any]) -> str:
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     ip = asset.get("asset", {}).get("ip", "-")
     env = asset.get("asset", {}).get("environment", "-")
 
