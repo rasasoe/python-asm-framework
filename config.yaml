@@ -1,7 +1,12 @@
 target:
-  ip: 13.48.148.234
-  base_url: http://13.48.148.234:80
+  ip: 127.0.0.1
+  base_url: http://127.0.0.1:3000
   swagger_path: /api-docs/swagger.yaml
+
+authorization:
+  acknowledged: false      # 소유권 또는 명시적 허가를 확인한 뒤 true로 변경
+  allowed_targets:
+    - 127.0.0.1
 
 collection:
   run_nse_safe: false     # Windows에서 nmap NSE 경로/권한 이슈 있으면 false 권장
@@ -19,4 +24,4 @@ nvd:
   enrich_top_n: 5          # 상위 CVE N개만 NVD로 보강
 
 risk:
-  public_scan: true        # 인터넷 노출 자산(EC2)면 true, 로컬만이면 false로 낮춰도 됨
+  public_scan: false       # 인터넷 노출 자산으로 승인된 경우에만 true

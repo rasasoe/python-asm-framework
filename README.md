@@ -1,430 +1,195 @@
-# Python ASM Framework (Discovery + Mapping, No Exploitation)
+# Python ASM Framework
 
-이 프로젝트는 Attack Surface Management(ASM) 관점에서 다음을 자동화합니다.
+> 허가된 자산의 외부 노출면을 발견하고, 서비스·기능·CVE 맥락을 하나의 리스크 흐름으로 정리하는 Attack Surface Management 프로토타입
 
-- Technical Attack Surface: 포트/서비스/버전 식별(nmap -sV), HTTP 헤더 기반 정체 보강
-- Functional Attack Surface: Swagger(OpenAPI) 기반 API 구조 파악 + Selenium(관찰-only) 기반 UI 기능 목록화
-- Vulnerability Knowledge Mapping: Vulners / NVD를 통한 CVE "지식 매핑"(공격/재현 없음)
-- Risk Scoring: 노출/구성/기능 구조/지식 매핑을 합친 점수화
-- Report: result.json + report.md 자동 생성
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Nmap](https://img.shields.io/badge/Nmap-Service_Discovery-2E5B82)](https://nmap.org/)
+[![Scope](https://img.shields.io/badge/Scope-Authorized_Targets_only-2EA44F)](#안전-및-권한-경계)
 
-> ⚠️ 본 도구는 공격(Exploit), 인증 우회, 데이터 변조 기능을 포함하지 않습니다.
-> 반드시 본인이 소유/관리하는 자산 또는 명시적으로 허가된 실습 환경에서만 사용하세요.
+이 프로젝트는 단순히 열린 포트를 나열하는 데서 멈추지 않습니다. Nmap 서비스 탐지, HTTP 설정 관찰, Swagger/OpenAPI 구조, 선택적 CVE 조회를 결합해 **어떤 자산이 왜 공격 표면이 되는지** 설명 가능한 결과로 변환합니다.
 
----
+## 프로젝트 포지션
 
-## 🎯 프로젝트 목표 (Project Goals)
+| 프로젝트 | 관찰 대상 | 포트폴리오 역할 |
+|---|---|---|
+| [DotasPlus](https://github.com/rasasoe/DotasPlus) | 외부 위협 정보·IOC | CTI 수집/정규화 실험 |
+| **Python ASM Framework** | 운영 자산의 서비스·노출·CVE 맥락 | 외부 공격 표면 분석 |
+| [VSH](https://github.com/rasasoe/VSH) | 소스 코드·의존성·SBOM | AppSec 대표 프로젝트 |
 
-- 단순 취약점 스캔을 넘어선 **ASM 사고 흐름(Workflow) 구현**
-- "무엇이 열려 있는가"에서 나아가 **"왜 공격 표면이 되는가"**를 설명 가능하도록 모델링
-- **직접적인 공격 없이** 리스크를 정량적·정성적으로 평가하는 구조 설계
+세 프로젝트를 한 저장소로 섞는 대신 도메인별 책임은 분리하고, ASM은 `findings.json`이라는 버전이 명시된 결과 형식을 제공해 향후 통합 대시보드가 소비할 수 있도록 설계했습니다.
 
----
+## 분석 워크플로우
 
-## 🧠 핵심 개념 (Key Concepts)
+```mermaid
+flowchart TD
+    A["권한 확인·대상 허용 목록"] --> B["서비스 발견·버전 식별"]
+    B --> C["HTTP 설정·OpenAPI·UI 관찰"]
+    C --> D["Vulners·NVD 지식 매핑"]
+    D --> E["노출·설정·기능·CVE 점수화"]
+    E --> F["result.json · findings.json · report.md"]
+```
 
-이 프레임워크의 범위와 한계를 명확히 정의합니다.
+| 단계 | 입력/수집 | 결과 |
+|---|---|---|
+| 1. 범위 확인 | `authorization.allowed_targets` | 승인되지 않은 대상 실행 차단 |
+| 2. 기술 표면 | Nmap `-Pn -p- -sV --version-light` | 열린 포트, 서비스, 제품/버전 |
+| 3. 기능 표면 | HTTP 헤더, Swagger/OpenAPI, 선택적 Selenium | 설정 누락, API 엔드포인트, 화면 기능 |
+| 4. 지식 보강 | 선택적 Vulners/NVD API | 서비스 지문과 CVE 참고 정보 연결 |
+| 5. 리스크 산정 | 노출·구성·기능·CVE 맥락 | 자산 및 서비스별 0–100 점수 |
+| 6. 결과 생성 | 정규화/보고 모듈 | 기계 판독 JSON과 Markdown 보고서 |
 
-### ✅ 이 프로젝트가 수행하는 것 (IS)
-- **공격 표면 식별 (Discovery)**: 자산의 노출된 지점 파악
-- **기술적/기능적 모델링**: 시스템 구조 및 기능적 접점 분석
-- **CVE 지식 매핑**: Vulners / NVD 등 공개 DB 연동
-- **노출 기반 리스크 스코어링**: 발견된 정보에 기반한 위험도 산정
-- **보안 리포트 자동화**: 분석 결과 리포트 생성
+## 주요 기능
 
-### ❌ 이 프로젝트가 수행하지 않는 것 (IS NOT)
-- **공격 프레임워크 아님**: Exploitation 수행 불가
-- **인증 우회 시도 안 함**: Authentication bypass 기능 없음
-- **악성 페이로드 전송 안 함**: Payload delivery 기능 없음
-- **취약점 증명(PoC) 안 함**: 실제 공격 가능 여부 테스트 안 함
-- **침투 테스트 도구 아님**: 시스템에 영향을 주는 침해 행위 없음
+- 전체 TCP 포트와 서비스/버전 식별
+- 최선 노력 방식의 OS 추정
+- HTTP 보안 헤더와 공개 설정 관찰
+- Swagger/OpenAPI 문서 기반 API 구조 파악
+- 클릭·입력 없는 Selenium UI 요소 관찰
+- 선택적 Vulners CVE 매핑 및 NVD 상세 정보 보강
+- 노출, 설정, 기능, CVE 지식을 결합한 리스크 점수
+- 상세 결과, 공통 finding 계약, 읽기 쉬운 보고서 동시 생성
 
----
+## 범위와 한계
 
-## 🧱 아키텍처 개요 (Architecture Overview)
+이 도구는 **발견과 맥락화**를 위한 프로토타입입니다.
+
+- 수행: 서비스 탐지, 공개 HTTP/OpenAPI 조회, 화면 요소 관찰, 공개 취약점 DB 조회
+- 미수행: 익스플로잇, 인증 우회, 악성 페이로드, 데이터 변조, 취약점 PoC 검증
+- 해석 주의: 서비스 지문과 CVE의 연결은 지식 기반 후보이며 실제 취약성을 증명하지 않습니다.
+- 활동성 주의: Nmap `-sV`와 HTTP 요청은 대상에 패킷과 요청을 보내는 **능동적 프로빙**입니다.
+
+## 프로젝트 구조
 
 ```text
-Target Asset (대상 자산)
-│
-├─ Technical Attack Surface (기술적 공격 표면)
-│   ├─ Port / Service / Version (nmap -sV 활용)
-│   ├─ OS Guessing (운영체제 추정)
-│   ├─ HTTP Header & Config Observation (설정 관찰)
-│   └─ NSE (safe, discovery 카테고리 한정)
-│
-├─ Functional Attack Surface (기능적 공격 표면)
-│   ├─ Swagger(OpenAPI) API Structure Parsing
-│   └─ UI Function Observation (Selenium 활용, 관찰 전용)
-│
-├─ Vulnerability Knowledge Mapping (취약점 지식 매핑)
-│   ├─ Vulners API (CVE 연결)
-│   └─ NVD API (공식 레퍼런스 정보 보강)
-│
-└─ Risk Scoring & Reporting (위험도 평가 및 보고)
-
-```
-
----
-
-## 🔍 주요 기능 (Features)
-
-### 1. 기술적 공격 표면 식별 (Technical Discovery)
-
-* 전체 TCP 포트 디스커버리
-* 서비스 및 버전 정보 식별
-* OS 핑거프린팅 (최선 노력 방식)
-* HTTP 보안 헤더 관찰 및 분석
-* **Nmap NSE 스크립트는 `safe` 및 `discovery` 카테고리로 엄격히 제한**
-
-### 2. 기능적 공격 표면 매핑 (Functional Mapping)
-
-* Swagger / OpenAPI 파싱 (API 구조 분석)
-* Selenium 기반의 UI **단순 관찰 (Observation)**
-* *클릭, 입력, 인증 시도, 상태 변경 행위 없음*
-
-
-
-### 3. 취약점 지식 매핑 (Knowledge Mapping)
-
-* Vulners를 통한 CVE 조회 (문자열 기반 매핑)
-* NVD를 통한 정보 보강 (공식 CVE 상세 내용)
-* **실제 Exploit 코드는 실행하지 않음**
-
-### 4. 리스크 스코어링 엔진 (Risk Scoring Engine)
-
-* 노출도(Exposure) 기반 점수 산정
-* 설정(Configuration) 기반 점수 산정
-* 기능적 표면(Functional surface) 가중치 적용
-* CVSS 기반의 지식 스코어링
-* 자산 단위의 리스크 통합 산출
-
-### 5. 리포트 자동 생성 (Auto-generated Reports)
-
-* 정규화된 데이터 포맷: JSON (`result.json`)
-* 가독성 높은 보고서: Markdown (`report.md`)
-
----
-
-## 📁 프로젝트 구조 (Project Structure)
-
-```bash
 python-asm-framework/
-├─ asm.py               # 메인 실행 파일
-├─ config.yaml          # 설정 파일
-├─ requirements.txt     # 의존성 라이브러리 목록
-├─ core/                # 핵심 로직
-├─ scanner/             # 스캔 모듈 (Nmap, Selenium 등)
-├─ parser/              # 데이터 파싱 모듈
-├─ vuln/                # 취약점 DB 연동 모듈
-├─ risk/                # 리스크 계산 엔진
-├─ report/              # 리포트 생성 모듈
-└─ output/              # 결과물 저장 경로
-
+├── asm.py                       # 실행 오케스트레이션과 권한 확인
+├── config.yaml                  # 대상·수집·API 설정
+├── core/                        # 자산 데이터 모델
+├── scanner/                     # Nmap·HTTP·Selenium 수집기
+├── parser/                      # OpenAPI/UI 결과 파싱
+├── vuln/                        # Vulners·NVD 연동
+├── risk/                        # 리스크 계산
+├── report/
+│   ├── markdown_report.py       # 사람이 읽는 보고서
+│   └── normalized_findings.py   # 통합용 finding 계약
+└── tests/                       # 네트워크 없는 결정론적 단위 테스트
 ```
 
----
+## 빠른 시작
 
-## 🚀 빠른 시작 (Quick Start)
+### 1. 요구 사항
 
-### 1. 요구 사항 (Requirements)
-
-* Python 3.10 이상
-* Nmap 설치 및 PATH 환경변수 등록 필수
-  - **Windows**: Nmap 공식 설치 프로그램으로 설치 (PATH 자동 등록)
-  - **WSL**: `sudo apt-get install nmap` 실행
-  - **Linux/Mac**: 패키지 관리자로 설치 (`brew install nmap` 등)
-* (선택) Selenium 관찰 기능을 위한 Google Chrome 브라우저
-
-### 2. 의존성 설치
+- Python 3.10 이상
+- Nmap 설치 및 PATH 등록
+- 선택: UI 관찰 기능을 위한 Chrome
+- 선택: CVE 보강을 위한 Vulners/NVD API 키
 
 ```bash
 pip install -r requirements.txt
-
-```
-
----
-
-## 🚨 트러블슈팅 (Troubleshooting)
-
-### ❌ `nmap program was not found in path`
-
-**원인**: nmap이 설치되지 않았거나 PATH에 등록되지 않음
-
-**해결:**
-```bash
-# Windows (WSL 환경)
-sudo apt-get install nmap
-
-# Windows (native)
-# → https://nmap.org/download.html 에서 .exe 설치 후 PATH 등록
-
-# macOS
-brew install nmap
-
-# Linux
-sudo apt-get install nmap
-```
-
-**확인:**
-```bash
 nmap --version
 ```
 
----
+### 2. 대상과 권한 설정
 
-### ❌ `Chrome instance exited` (Selenium 오류)
-
-**원인**: Chrome이 설치되지 않았거나 headless 모드 미지원
-
-**해결:**
-```yaml
-# config.yaml에서:
-collection:
-  run_selenium: false  # Chrome이 없으면 false로 설정
-```
-
-또는 Chrome 설치 후 `run_selenium: true`로 변경
-
----
-
-### ❌ `DeprecationWarning: datetime.utcnow()` 경고
-
-**원인**: 구 Python datetime API 사용
-
-**영향**: 기능 동작에 문제 없음 (경고만 표시)
-
-**해결**: Python 3.12+ 사용 시 자동 해결됨
-
----
-
-## 📊 API 연동 여부에 따른 수집 범위
-
-### ❌ API 없는 경우 (현재 상태)
-
-**수집 데이터:**
-```
-✅ 포트/서비스/버전 (nmap)
-✅ 보안 헤더 누락 (HTTP 프로빙)
-✅ API 구조 (Swagger 조회)
-✅ UI 요소 (Selenium 관찰)
-❌ CVE 정보 (API 필요)
-```
-
-**리스크 점수 예시:**
-```
-Port 80 (nginx 1.18.0):
-├─ Exposure: 15/35  (nmap으로 파악)
-├─ Config: 4/20     (HTTP 헤더로 파악)
-├─ Knowledge: 0/35  ← CVE 없음
-└─ Functional: 0/20
-   = 19/100 (Low)
-```
-
-### ✅ API 있는 경우 (Vulners + NVD)
-
-**추가 수집 데이터:**
-```
-✅ CVE 목록 (Vulners API)
-✅ CVE 상세정보 (NVD API)
-✅ CVSS 점수
-✅ 패치/해결책 정보
-```
-
-**리스크 점수 예시 (동일 환경):**
-```
-Port 80 (nginx 1.18.0):
-├─ Exposure: 15/35
-├─ Config: 4/20
-├─ Knowledge: 35/35  ← CVE-2021-23017 (CVSS 7.5)
-└─ Functional: 0/20
-   = 54/100 (High) ← "Low"→"High"로 변경!
-```
-
----
-
-## 📈 정보 소스별 상세 분석
-
-| 정보 | 수집 방법 | API 필요? | 침략도 | 상세 |
-|------|---------|---------|------|------|
-| 포트/서비스/버전 | nmap 스캔 | ❌ | 매우 낮음 | SYN 포트 스캔만 수행 |
-| 보안 헤더 | HTTP GET | ❌ | 없음 | 헤더 정보 읽기만 |
-| API 구조 | Swagger 파싱 | ❌ | 없음 | 공개 문서 조회 |
-| UI 요소 | Selenium 관찰 | ❌ | 없음 | 화면 캡처, 클릭/입력 없음 |
-| **CVE 매칭** | **Vulners** | **✅** | **없음** | **공개 DB 검색** |
-| **CVE 상세정보** | **NVD** | **✅** | **없음** | **공식 DB 조회** |
-
----
-
-## 🔍 각 수집 단계별 흐름
-
-### 1단계: 기술적 공격 표면 (침략 없음)
-```bash
-nmap -Pn -p- -sV --version-light {target_ip}
-↓
-포트 80: nginx 1.18.0
-포트 8080: http-proxy
-```
-
-### 2단계: HTTP 설정 분석 (조회만)
-```bash
-GET http://{target}:{port}/
-↓
-Server: nginx/1.18.0
-Missing Headers: CSP, HSTS, X-Frame-Options (5개)
-```
-
-### 3단계: API 구조 파악 (문서 읽기)
-```bash
-GET http://{target}/api-docs/swagger.yaml
-↓
-Endpoints: GET /api/users, POST /api/data (인증 없음)
-```
-
-### 4단계: CVE 매칭 (선택, API 필수)
-```bash
-Vulners API: query="nginx 1.18.0" limit=8
-↓
-CVE-2021-23017 (CVSS 7.5, High)
-CVE-2019-9511 (CVSS 7.5, High)
-...
-```
-
-### 5단계: NVD 상세정보 (선택, API 필수)
-```bash
-NVD API: cveId="CVE-2021-23017"
-↓
-설명, 영향범위, 패치정보, 참조링크
-```
-
----## 1. 요구 사항 (Requirements)
-
-* Python 3.10 이상
-* Nmap 설치 및 PATH 환경변수 등록 필수
-* (선택) Selenium 관찰 기능을 위한 Google Chrome 브라우저
-
-### 2. 의존성 설치
-
-```bash
-pip install -r requirements.txt
-
-```
-
-### 3. 대상 설정
-
-`config.yaml` 파일을 수정하여 분석 대상을 설정합니다.
+기본 설정은 로컬 실습 대상만 허용합니다.
 
 ```yaml
 target:
   ip: 127.0.0.1
   base_url: http://127.0.0.1:3000
   swagger_path: /api-docs/swagger.yaml
+
+authorization:
+  acknowledged: false
+  allowed_targets:
+    - 127.0.0.1
 ```
 
-**필드 설명:**
+소유권이나 명시적 허가를 확인한 뒤 `acknowledged: true`로 변경하세요. `target.ip`와 `target.base_url`의 호스트 중 하나라도 `authorization.allowed_targets`에 없거나 `acknowledged`가 `false`이면 실행을 중단합니다.
 
-| 필드 | 설명 | 예시 |
-|------|------|------|
-| `ip` | **nmap으로 포트를 자동 스캔할 대상 IP** (포트를 미리 알 필요 없음) | `192.168.1.100`, `10.0.0.50`, `54.123.45.67` (EC2) |
-| `base_url` | **HTTP 서비스가 실제로 돌아가는 주소** (프로토콜+호스트+포트) → HTTP 헤더 분석, Swagger 조회, Selenium UI 수집에 사용 | `http://localhost:3000`, `http://192.168.1.100:8080`, `http://54.123.45.67:5000` |
-| `swagger_path` | Swagger/OpenAPI 문서의 상대 경로 (base_url에 추가됨) | `/api-docs/swagger.yaml`, `/openapi.json`, `/v3/api-docs` |
+### 3. 선택 기능 설정
 
-**`ip` vs `base_url` 차이:**
-- **`ip` (필수)**: nmap이 자동으로 모든 열린 포트를 찾는다 → 포트를 미리 알 필요 없음
-- **`base_url` (필수)**: 실제 웹 서비스가 돌아가는 주소 → 보안 헤더, Swagger, UI 등을 프로빙함
+```yaml
+collection:
+  run_nse_safe: false
+  run_selenium: false
 
-**예시:**
-- **로컬 테스트:** 
-  - `ip: 127.0.0.1` (nmap이 자동으로 포트 찾음)
-  - `base_url: http://127.0.0.1:3000` (알려진 포트에서 HTTP 프로빙)
-  
-- **내부망 서버:**
-  - `ip: 192.168.1.50` (nmap이 자동으로 열린 포트 찾음)
-  - `base_url: http://192.168.1.50:8080` (해당 포트의 웹 서비스 분석)
-  
-- **EC2 배포 (포트 미리 모를 때):**
-  - `ip: 54.123.45.67` (nmap이 자동으로 모든 열린 포트 검색)
-  - `base_url: http://54.123.45.67:3000` (EC2에서 실제 실행 중인 포트)
+vulners:
+  enabled: false
+  api_key: "PUT_YOUR_VULNERS_API_KEY_HERE"
 
-> **💡 TIP:** EC2에 배포한 경우, 포트를 미리 모르면 `base_url`은 임시로 `http://54.123.45.67:80`으로 설정해도 됨. nmap이 자동으로 실제 열린 포트들을 찾아주니까! (Swagger/UI 수집은 설정한 base_url에서만 시도)
-
+nvd:
+  enabled: false
+  api_key: ""
 ```
+
+API 키는 공개 저장소에 커밋하지 마세요. 환경별 비공개 설정이나 시크릿 관리 수단을 사용하세요.
 
 ### 4. 실행
 
 ```bash
 python asm.py
-
 ```
 
-### 5. 결과 확인
+## 결과물
 
-* 데이터: `output/result.json`
-* 보고서: `output/report.md`
+| 파일 | 용도 |
+|---|---|
+| `output/result.json` | 자산·기술 표면·기능 표면·CVE·리스크의 전체 결과 |
+| `output/findings.json` | 다른 보안 프로젝트나 대시보드가 소비할 정규화된 결과 |
+| `output/report.md` | 사람이 검토할 Markdown 요약 보고서 |
 
----
+`findings.json`은 `schema_version: "1.0"`을 포함하고, 노출 서비스마다 다음 필드를 제공합니다.
 
-## 🧪 권장 테스트 환경
+```json
+{
+  "source": "python-asm-framework",
+  "asset": {"type": "host", "value": "127.0.0.1", "environment": "local"},
+  "finding_type": "attack_surface.service_exposure",
+  "severity": "medium",
+  "score": 25,
+  "confidence": 0.75,
+  "confidence_basis": "product and version fingerprint",
+  "evidence": {},
+  "references": [],
+  "detected_at": "2026-01-01T00:00:00+00:00"
+}
+```
 
-이 프로젝트는 의도적으로 취약하게 구성된 환경이나 본인 소유의 환경에서 테스트하는 것을 권장합니다.
+## 테스트
 
-* 로컬 테스트 서버
-* 개인 실습용 VM
-* **OWASP Juice Shop** (로컬 Docker 배포 권장)
+현재 테스트는 외부 네트워크나 실제 스캔 없이 리스크 계산과 정규화 결과 계약을 검증합니다.
 
-**Example (Juice Shop 실행):**
+```bash
+PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -v
+```
+
+실제 수집 검증은 본인 소유의 로컬 서버, 개인 실습 VM, 또는 로컬 Docker로 실행한 [OWASP Juice Shop](https://owasp.org/www-project-juice-shop/) 같은 의도적 실습 환경을 권장합니다.
 
 ```bash
 docker run -d -p 3000:3000 bkimminich/juice-shop
-
 ```
 
----
+## 수집 방식과 활동성
 
-## ⚠️ 법적 및 윤리적 고지 (Legal & Ethical Notice)
+| 정보 | 수집 방식 | 활동성 | 설명 |
+|---|---|---:|---|
+| 포트·서비스·버전 | Nmap `-sV` | 능동적 | 서비스 식별 프로브 전송 |
+| 보안 헤더 | HTTP 요청 | 능동적 | 설정한 URL의 응답 헤더 관찰 |
+| API 구조 | Swagger/OpenAPI 조회 | 능동적 | 공개 문서 경로 요청 및 파싱 |
+| UI 요소 | Selenium | 능동적 관찰 | 페이지 로드 후 표시 요소 수집, 클릭·입력 없음 |
+| CVE 후보 | Vulners/NVD | 외부 DB 조회 | 대상이 아닌 공개 지식베이스에 질의 |
 
-**이 프로젝트는 교육 및 연구 목적으로만 사용되어야 합니다.**
+## 안전 및 권한 경계
 
-* ✔ **허용:** 탐색(Discovery), 관찰(Observation), 지식 매핑(Knowledge mapping)
-* ❌ **금지:** 익스플로잇(Exploitation), 인증 우회, 데이터 변조, 침습적 테스트
+이 프로젝트는 교육 및 연구용입니다. 본인이 소유하거나 명시적인 분석 허가를 받은 시스템에만 사용해야 합니다. 허가 여부가 불명확하면 실행하지 마세요.
 
-**반드시 본인이 소유하거나 분석 허가를 명확히 받은 시스템에 대해서만 도구를 사용하십시오.** 도구의 오용이나 불법적인 활동으로 인한 책임은 전적으로 사용자에게 있습니다.
+코드 수준에서는 대상 허용 목록과 확인 플래그를 검사하지만, 이것이 법적 허가를 대신하지는 않습니다. 사용자는 스캔 범위, 시간, 요청량, 데이터 취급 조건을 포함한 실제 승인 범위를 지켜야 합니다.
 
----
+## 현재 상태와 다음 단계
 
-## 🧩 왜 중요한가? (ASM Perspective)
+- 현재: 발견 → 맥락화 → 점수화 → 3종 결과 생성까지 동작하는 집중형 프로토타입
+- 완료: 권한 확인 가드, 결정론적 단위 테스트, 버전이 명시된 finding 결과 형식
+- 다음: 수집기별 fixture/mock 테스트, CLI 옵션, 스키마 검증, 실제 통합 대시보드 소비자
 
-> "취약점(Vulnerability) 그 자체가 침해(Breach)는 아닙니다.
-> **노출(Exposure) + 맥락(Context) + 능력(Capability)**이 결합될 때 진짜 리스크가 됩니다."
-
-이 프레임워크는 다음을 목표로 합니다:
-
-1. 자산이 **왜** 위험해질 수 있는지 이해
-2. 실제 공격 이전에 공격 표면을 **모델링**
-3. 보안 설계, 강화(Hardening), 우선순위 산정을 위한 근거 마련
-
----
-
-## 📌 예상 사용자 (Intended Audience)
-
-* 정보보안 전공 학생 및 교육생
-* Blue Team / Purple Team 엔지니어
-* ASM / 자산 관리 실무자
-* 공격 없이 공격자의 사고방식을 배우고 싶은 연구자
-
----
-
-## 📄 라이선스 (License)
-
-본 프로젝트는 교육용으로 배포됩니다. 상업적 이용이나 공격적인 목적으로의 사용을 지양합니다.
-
----
-
-## 🧠 마치며 (Final Note)
-
-이 저장소는 해킹 능력이 아닌 **보안 성숙도(Security Maturity)**를 보여주기 위함입니다.
-
-**"어떻게 공격하는가"를 아는 것만큼, "어디서 멈춰야 하는가"를 아는 것이 중요합니다.**
-
-```
-
-```
+이 저장소의 목표는 공격 기능의 수가 아니라 **범위 통제, 근거 보존, 결과 정규화까지 포함한 보안 엔지니어링 흐름**을 보여주는 것입니다.
