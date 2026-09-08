@@ -5,6 +5,7 @@ import yaml
 from pathlib import Path
 
 from core.asset import new_asset
+from core.scope import validate_target_authorization
 
 from scanner.port_scan import scan_services
 from scanner.os_fingerprint import detect_os_guess
@@ -19,6 +20,7 @@ from vuln.nvd_mapper import enrich_cves_with_nvd
 
 from risk.scoring import score_asset
 from report.markdown_report import generate_report_md
+from report.normalized_findings import build_findings_export
 
 def load_config(path: str = "config.yaml") -> dict:
     with open(path, "r", encoding="utf-8") as f:
@@ -30,6 +32,7 @@ def ensure_output_dir():
 def main():
     cfg = load_config()
     ensure_output_dir()
+    validate_target_authorization(cfg)
 
     ip = cfg["target"]["ip"]
     base_url = cfg["target"]["base_url"]
@@ -120,6 +123,10 @@ def main():
     with open("output/result.json", "w", encoding="utf-8") as f:
         json.dump(asset, f, indent=2, ensure_ascii=False)
 
+    # Save the versioned cross-project finding contract.
+    with open("output/findings.json", "w", encoding="utf-8") as f:
+        json.dump(build_findings_export(asset), f, indent=2, ensure_ascii=False)
+
     # Save report
     report_md = generate_report_md(asset)
     with open("output/report.md", "w", encoding="utf-8") as f:
@@ -127,6 +134,7 @@ def main():
 
     print("[+] Done")
     print(" - output/result.json")
+    print(" - output/findings.json")
     print(" - output/report.md")
 
 if __name__ == "__main__":
