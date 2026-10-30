@@ -1,5 +1,8 @@
 # Python ASM Framework
 
+<p align="center"><b>🌐 Language</b> &nbsp; <strong>🇰🇷 한국어</strong> &nbsp; | &nbsp; <a href="README.en.md">🇺🇸 English</a></p>
+
+
 > 허가된 자산의 외부 노출면을 발견하고, 서비스·기능·CVE 맥락을 하나의 리스크 흐름으로 정리하는 Attack Surface Management 프로토타입
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
