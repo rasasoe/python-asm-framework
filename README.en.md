@@ -9,6 +9,16 @@
 
 > An Attack Surface Management prototype for analyzing **authorized assets**, service exposure, application endpoints and contextual CVE references.
 
+## Validation question and timeline
+
+**Documented work and verification activity:** February–September 2026 (not a verified full development period).
+
+A service fingerprint is a hypothesis, not proof. This project tests whether **authorization scope can be enforced** and observed service, HTTP, and CVE context can be exported as **traceable, consistently structured findings** without treating inferred vulnerabilities as confirmed exploits.
+
+- **Evidence:** Six offline unit tests covering authorization checks, scoring, and output normalization.
+- **Field observation:** An Nmap service-label mismatch on a TCP 2323 listener prompted investigation. It is an example of uncertain identification; this is **not** a claim of improved fingerprinting accuracy or a validated before/after benchmark.
+- **Not verified:** Live end-to-end Nmap/Selenium/CVE API collection or field detection accuracy.
+
 ## Why this project?
 
 Port lists alone rarely communicate what an exposed service means. This prototype joins Nmap service discovery, optional HTTP/OpenAPI observations and public vulnerability references into an evidence-oriented risk summary.
