@@ -1,25 +1,28 @@
-<p align="center"><img src="assets/portfolio-banner.svg" width="100%" alt="python-asm-framework — project overview"></p>
+<picture>
+  <source media="(max-width: 600px)" srcset="assets/portfolio-banner-mobile.svg">
+  <img src="assets/portfolio-banner.svg" width="100%" alt="Python ASM — authorized attack surface analysis">
+</picture>
 
-# Python ASM Framework
+<p align="right"><a href="README.md">한국어</a> / <strong>English</strong></p>
 
-<div align="center">
-  <p><a href="README.md">🇰🇷 한국어</a> · <strong>🇺🇸 English</strong></p>
-  
-</div>
+# Python ASM — Authorized Attack Surface Analysis
+
+**Python · Nmap · HTTP context · Finding JSON**  
+**Documented development/test activity:** February–September 2026
+
+## Why this project?
+
+An open port and a service label do not establish a verified vulnerability. An observed Nmap fingerprint mismatch prompted the question: **can we separate observations from hypotheses while producing repeatable findings only for authorized targets?**
+
+## Implemented workflow
+
+1. **Constrain scope:** Validate authorization and target allowlists
+2. **Observe exposure:** Combine service, HTTP and API surface information
+3. **Record evidence:** Normalize observations and contextual risk into versioned Finding JSON
+
+**Evidence:** Six offline unit tests passed for authorization boundaries, scoring and output formatting. Live end-to-end scan coverage and field detection accuracy have not been verified.
 
 ---
-
-> An Attack Surface Management prototype for analyzing **authorized assets**, service exposure, application endpoints and contextual CVE references.
-
-## Validation question and timeline
-
-**Documented work and verification activity:** February–September 2026 (not a verified full development period).
-
-A service fingerprint is a hypothesis, not proof. This project tests whether **authorization scope can be enforced** and observed service, HTTP, and CVE context can be exported as **traceable, consistently structured findings** without treating inferred vulnerabilities as confirmed exploits.
-
-- **Evidence:** Six offline unit tests covering authorization checks, scoring, and output normalization.
-- **Field observation:** An Nmap service-label mismatch on a TCP 2323 listener prompted investigation. It is an example of uncertain identification; this is **not** a claim of improved fingerprinting accuracy or a validated before/after benchmark.
-- **Not verified:** Live end-to-end Nmap/Selenium/CVE API collection or field detection accuracy.
 
 ## Why this project?
 
