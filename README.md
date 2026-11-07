@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/portfolio-banner.svg" width="100%" alt="python-asm-framework — project overview"></p>
+
 # Python ASM Framework
 
 <p align="center"><b>🌐 Language</b> &nbsp; <strong>🇰🇷 한국어</strong> &nbsp; | &nbsp; <a href="README.en.md">🇺🇸 English</a></p>
@@ -5,9 +7,6 @@
 
 > 허가된 자산의 외부 노출면을 발견하고, 서비스·기능·CVE 맥락을 하나의 리스크 흐름으로 정리하는 Attack Surface Management 프로토타입
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Nmap](https://img.shields.io/badge/Nmap-Service_Discovery-2E5B82)](https://nmap.org/)
-[![Scope](https://img.shields.io/badge/Scope-Authorized_Targets_only-2EA44F)](#안전-및-권한-경계)
 
 이 프로젝트는 단순히 열린 포트를 나열하는 데서 멈추지 않습니다. Nmap 서비스 탐지, HTTP 설정 관찰, Swagger/OpenAPI 구조, 선택적 CVE 조회를 결합해 **어떤 자산이 왜 공격 표면이 되는지** 설명 가능한 결과로 변환합니다.
 
