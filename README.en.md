@@ -1,8 +1,10 @@
+<p align="center"><img src="assets/portfolio-banner.svg" width="100%" alt="python-asm-framework — project overview"></p>
+
 # Python ASM Framework
 
 <div align="center">
   <p><a href="README.md">🇰🇷 한국어</a> · <strong>🇺🇸 English</strong></p>
-  <p><img alt="Python" src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white"/> <img alt="Nmap" src="https://img.shields.io/badge/Nmap-Service_Discovery-2E5B82"/> <img alt="Scope" src="https://img.shields.io/badge/Scope-Authorized_Only-2EA44F"/></p>
+  
 </div>
 
 ---
