@@ -1,24 +1,28 @@
-<p align="center"><img src="assets/portfolio-banner.svg" width="100%" alt="python-asm-framework — project overview"></p>
+<picture>
+  <source media="(max-width: 600px)" srcset="assets/portfolio-banner-mobile.svg">
+  <img src="assets/portfolio-banner.svg" width="100%" alt="Python ASM — 공격 표면 분석 프로젝트">
+</picture>
 
-# Python ASM Framework
+<p align="right"><strong>한국어</strong> / <a href="README.en.md">English</a></p>
 
-<p align="center"><b>🌐 Language</b> &nbsp; <strong>🇰🇷 한국어</strong> &nbsp; | &nbsp; <a href="README.en.md">🇺🇸 English</a></p>
+# Python ASM — 승인된 자산의 공격 표면 분석
 
+**Attack Surface Management · Python · Nmap · HTTP · Finding JSON**  
+**확인된 개발·테스트 활동:** 2026.02–2026.09
 
-> 허가된 자산의 외부 노출면을 발견하고, 서비스·기능·CVE 맥락을 하나의 리스크 흐름으로 정리하는 Attack Surface Management 프로토타입
+## 왜 만들었나
 
+열려 있는 포트를 발견했다고 해서 해당 서비스나 취약점이 확정되는 것은 아닙니다. 실제 Nmap 서비스명 추정 불일치 경험을 바탕으로, **관찰한 사실과 추정한 위험을 분리하고 승인된 범위에서 반복 가능한 자산 진단 결과를 만들자**는 목표로 진행했습니다.
 
-이 프로젝트는 단순히 열린 포트를 나열하는 데서 멈추지 않습니다. Nmap 서비스 탐지, HTTP 설정 관찰, Swagger/OpenAPI 구조, 선택적 CVE 조회를 결합해 **어떤 자산이 왜 공격 표면이 되는지** 설명 가능한 결과로 변환합니다.
+## 구현한 과정
 
-## 검증하려 했던 문제
+1. **범위 통제:** 승인된 대상과 허용 목록 확인
+2. **노출 관찰:** Nmap·HTTP 설정·OpenAPI 등에서 서비스·공격 표면 후보 수집
+3. **결과 정리:** 위험 근거·추정 수준을 구분해 공통 Finding JSON으로 정규화
 
-**확인된 작업·검증 기록:** 2026.02–2026.09 (개발 전체 기간과 구분)
+**확인한 범위:** 권한 경계, 점수화 및 출력 형식에 대한 오프라인 단위 테스트 6개 통과. 실제 외부 스캔 전체 파이프라인의 정확도·성공률을 입증한 결과는 아닙니다.
 
-포트 스캔 결과만으로 실제 서비스를 단정하면 잘못된 위험 판단으로 이어질 수 있습니다. 이 프로젝트에서는 **승인된 자산만 관찰하는지**, 서비스·HTTP·CVE 맥락을 **추적 가능한 결과로 정규화할 수 있는지**, 그리고 관찰·추정·검증을 구별할 수 있는지를 확인하려 했습니다.
-
-- **확인된 근거:** 허용 목록과 권한 확인, Finding v1.0 export, 점수화의 결정론적 테스트 6개 통과
-- **주의할 사례:** TCP 2323 리스너를 Nmap이 다른 서비스명으로 추정한 식별 불일치를 조사한 경험이 있습니다. 이 경험은 **서비스 지문이 확정 사실이 아님**을 보여주며, 정확도 개선이나 전후 성능 측정을 달성했다고 주장하지 않습니다.
-- **미검증:** 실제 Nmap·Selenium·CVE API 전체를 연결한 종단 간 수집과 탐지 정확도 평가
+---
 
 ## 기여와 검증 근거
 
